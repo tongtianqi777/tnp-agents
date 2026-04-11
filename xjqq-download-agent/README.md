@@ -20,7 +20,7 @@ export OPENAI_API_KEY="sk-..."   # replace with your actual key
 ### CLI
 
 ```bash
-python agent.py /absolute/path/to/book_cover.jpg
+python book-title-detection-agent.py /absolute/path/to/book_cover.jpg
 ```
 
 Output (stdout):
@@ -32,7 +32,7 @@ Output (stdout):
 ### Programmatic
 
 ```python
-from agent import recognize_book_title
+from book-title-detection-agent import recognize_book_title
 
 title = recognize_book_title("/absolute/path/to/book_cover.jpg")
 print(title)   # e.g. "Deep Learning"
@@ -53,7 +53,7 @@ print(title)   # e.g. "Deep Learning"
 
 ```
 xjqq-download-agent/
-├── agent.py          # agent implementation
+├── book-title-detection-agent.py  # agent implementation
 ├── requirements.txt  # Python dependencies
 └── README.md         # this file
 ```
