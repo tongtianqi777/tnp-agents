@@ -108,7 +108,7 @@ def recognize_book_titles(image_path: str) -> list[str]:
     ]
 
     response = llm.invoke(messages)
-    titles = [line.strip() for line in response.content.strip().splitlines() if line.strip()]
+    titles = [line.strip().replace("!", "").replace("?", "").replace("！", "").replace("？", "") for line in response.content.strip().splitlines() if line.strip()]
     return titles
 
 

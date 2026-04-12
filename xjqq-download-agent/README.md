@@ -1,12 +1,14 @@
 # xjqq-download-agent — Book Title Recognition Agent
 
-A minimal LangChain agent that identifies a book's title from a cover image using OpenAI's vision model (`gpt-4o`).
+A minimal LangChain agent that identifies book titles from a cover image using OpenAI's vision model (`gpt-4o`). Supports multiple books in a single image and extracts the Chinese portion of bilingual titles.
 
 ## How it works
 
 1. Accepts a local absolute path to a book cover image as input.
 2. Encodes the image as base64 and sends it to `gpt-4o` via the OpenAI vision API.
-3. Returns **only** the recognized book title (Chinese, English, or both).
+3. Detects **all visible book titles** in the image.
+4. For each title: if it contains both an English part and a Chinese translation, returns **only the Chinese part**. Otherwise returns the title as-is.
+5. Strips any exclamation marks (`!`, `！`) and question marks (`?`, `？`) from the output.
 
 ## Setup
 
@@ -20,30 +22,32 @@ export OPENAI_API_KEY="sk-..."   # replace with your actual key
 ### CLI
 
 ```bash
-python book-title-detection-agent.py /absolute/path/to/book_cover.jpg
+python book-chinese-title-detection-agent.py /absolute/path/to/book_cover.jpg
 ```
 
-Output (stdout):
+Output (stdout, one title per line):
 
 ```
 深度学习
+机器学习实战
 ```
 
 ### Programmatic
 
 ```python
-from book-title-detection-agent import recognize_book_title
+from book_chinese_title_detection_agent import recognize_book_titles
 
-title = recognize_book_title("/absolute/path/to/book_cover.jpg")
-print(title)   # e.g. "Deep Learning"
+titles = recognize_book_titles("/absolute/path/to/book_cover.jpg")
+for title in titles:
+    print(title)
 ```
 
 ## Prompts
 
 | Role   | Content |
 |--------|---------|
-| System | *"You are a book title recognition assistant. When given an image of a book, extract and return ONLY the book title. The title may be in Chinese, English, or both. Do not include any explanation, punctuation, or additional text — output the title and nothing else."* |
-| Human  | `[image]` + *"What is the title of this book?"* |
+| System | *"You are a book title recognition assistant. When given an image that may contain one or more books, extract the title of every visible book. For each title: if it contains both an English part and a Chinese translation, output ONLY the Chinese part. If the title is Chinese-only, output it as-is. If the title is English-only (no Chinese translation present), output the English title as-is. Output one title per line with no numbering, explanations, or extra text."* |
+| Human  | `[image]` + *"List the titles of all books visible in this image."* |
 
 ## Model
 
@@ -53,7 +57,8 @@ print(title)   # e.g. "Deep Learning"
 
 ```
 xjqq-download-agent/
-├── book-title-detection-agent.py  # agent implementation
+├── book-chinese-title-detection-agent.py  # agent implementation
+├── book-chinese-title-detection-skill.md  # skill description
 ├── requirements.txt  # Python dependencies
 └── README.md         # this file
 ```
