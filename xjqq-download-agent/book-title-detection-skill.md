@@ -19,4 +19,4 @@ Use this when the user asks "detect the title of the book in this image".
 Asks for the book image path, and use it to populate the {{BookImagePath}} placeholder in the next step.
 
 ### 2. Run the script
-Run my script: `python3 book-title-detection-agent.py "{{BookImagePath}}"`
+Run my script: `python3 {baseDir}/scripts/book-title-detection-agent.py "{{BookImagePath}}"`
