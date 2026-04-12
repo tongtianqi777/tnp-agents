@@ -15,10 +15,11 @@ from langchain_openai import ChatOpenAI
 
 SYSTEM_PROMPT = (
     "You are a book title recognition assistant. "
-    "When given an image of a book, extract and return ONLY the book title. "
-    "The title may be in Chinese, English, or both. "
-    "Do not include any explanation, punctuation, or additional text — "
-    "output the title and nothing else."
+    "When given an image that may contain one or more books, extract the title of every visible book. "
+    "For each title: if it contains both an English part and a Chinese translation, output ONLY the Chinese part. "
+    "If the title is Chinese-only, output it as-is. "
+    "If the title is English-only (no Chinese translation present), output the English title as-is. "
+    "Output one title per line with no numbering, explanations, or extra text."
 )
 
 # OpenAI vision tiles images into 512×512 chunks for cost calculation.
@@ -61,16 +62,19 @@ def _load_and_resize(image_path: Path) -> str:
     return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
-def recognize_book_title(image_path: str) -> str:
+def recognize_book_titles(image_path: str) -> list[str]:
     """
-    Recognize the title of a book from a local image.
+    Recognize the titles of all books visible in a local image.
+
+    For titles that have both an English part and a Chinese translation,
+    only the Chinese part is returned.
 
     Args:
         image_path: Absolute path to the book cover image
                     (JPEG, PNG, WebP, GIF, HEIC/HEIF supported).
 
     Returns:
-        The recognized book title as a plain string.
+        A list of recognized book titles (one per book).
     """
     path = Path(image_path)
     if not path.is_file():
@@ -80,7 +84,7 @@ def recognize_book_title(image_path: str) -> str:
 
     llm = ChatOpenAI(
         model="gpt-4o",
-        max_tokens=256,
+        max_tokens=512,
         # api_key is read from the OPENAI_API_KEY environment variable by default
     )
 
@@ -97,14 +101,15 @@ def recognize_book_title(image_path: str) -> str:
                 },
                 {
                     "type": "text",
-                    "text": "What is the title of this book?",
+                    "text": "List the titles of all books visible in this image.",
                 },
             ]
         ),
     ]
 
     response = llm.invoke(messages)
-    return response.content.strip()
+    titles = [line.strip() for line in response.content.strip().splitlines() if line.strip()]
+    return titles
 
 
 if __name__ == "__main__":
@@ -114,5 +119,6 @@ if __name__ == "__main__":
         print("Usage: python agent.py <absolute_path_to_book_image>")
         sys.exit(1)
 
-    title = recognize_book_title(sys.argv[1])
-    print(title)
+    titles = recognize_book_titles(sys.argv[1])
+    for title in titles:
+        print(title)
