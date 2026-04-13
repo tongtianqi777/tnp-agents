@@ -18,6 +18,7 @@ Use this skill when the user wants to download a `.bnl` file for a book from XJQ
 3. Once the browser is on a content page like `/content/879?...`, resolve and download the file with `scripts/download_content.py`. The download link is often labeled with `下载bnl格式`.
 4. Save to `/Users/tnpbot/.openclaw/workspace/downloads/xjqq/` by default unless the user asked for a different path.
 5. Name the downloaded file in the format of `<title>-<original-file-name-without-extension>.bnl`.
+6. If the .bnl file cannot be found for a given book title, let the user know.
 
 
 ## Preferred command
@@ -25,7 +26,7 @@ Use this skill when the user wants to download a `.bnl` file for a book from XJQ
 Run the helper script instead of manually reverse-engineering the file URL every time.
 
 ```bash
-python3 /Users/tnpbot/.openclaw/workspace/skills/lovereadingbooks-download/scripts/download_content.py \
+python3 /Users/tnpbot/.openclaw/workspace/skills/xjqq-bnl-website-download/scripts/download_content.py \
   --content-url "https://piyopen.lovereadingbooks.com/content/879?from=search&nid=4650&keyword=%E4%B8%89%E4%B8%AA%E7%81%AB%E8%BD%A6%E5%A4%B4"
 ```
 
@@ -33,13 +34,13 @@ Useful variants:
 
 ```bash
 # If you already know the content id
-python3 /Users/tnpbot/.openclaw/workspace/skills/lovereadingbooks-download/scripts/download_content.py --content-id 879
+python3 /Users/tnpbot/.openclaw/workspace/skills/xjqq-bnl-website-download/scripts/download_content.py --content-id 879
 
 # If you only know the title
-python3 /Users/tnpbot/.openclaw/workspace/skills/lovereadingbooks-download/scripts/download_content.py --title "三个火车头"
+python3 /Users/tnpbot/.openclaw/workspace/skills/xjqq-bnl-website-download/scripts/download_content.py --title "三个火车头"
 
 # If you want structured output
-python3 /Users/tnpbot/.openclaw/workspace/skills/lovereadingbooks-download/scripts/download_content.py \
+python3 /Users/tnpbot/.openclaw/workspace/skills/xjqq-bnl-website-download/scripts/download_content.py \
   --content-id 879 --json
 ```
 
