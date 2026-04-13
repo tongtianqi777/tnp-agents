@@ -21,7 +21,7 @@ Given a local image path, the skill:
 1. **Ask for image path** — prompts the user for an absolute path to the book cover image.
 2. **Run the script** — executes:
    ```bash
-   python3 scripts/book-chinese-title-detection-agent.py "<image_path>"
+   python3 scripts/detect.py "<image_path>"
    ```
 3. **Return results** — prints one title per line to stdout.
 
@@ -36,15 +36,6 @@ export OPENAI_API_KEY="sk-..."
 
 JPEG, PNG, WebP, GIF, HEIC/HEIF
 
-## File structure
-
-```
-book-chinese-title-detection-skill/
-├── SKILL.md                                  # skill definition for Claude Code
-├── scripts/
-│   └── book-chinese-title-detection-agent.py # vision agent implementation
-└── README.md                                 # this file
-```
 
 ## Example output
 

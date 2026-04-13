@@ -13,7 +13,7 @@ Use this skill when the user wants to download a `.bnl` file for a book from XJQ
 2. Use Firecrawl interact prompts to:
    - click the top-right search box
    - type the requested book title
-   - click the matching result, often labeled `bnl格式 <title>`
+   - click the matching result, often labeled `bnl格式 <title>`. Note that the matching result may not completely match the book title provided. Sometimes it may have suffixes to the book title.
    - open the item detail page
 3. Once the browser is on a content page like `/content/879?...`, resolve and download the file with `scripts/download_content.py`. The download link is often labeled with `下载bnl格式`.
 4. Save to `/Users/tnpbot/.openclaw/workspace/downloads/xjqq/` by default unless the user asked for a different path.
@@ -23,7 +23,7 @@ Use this skill when the user wants to download a `.bnl` file for a book from XJQ
 
 ## Preferred command
 
-Run the helper script instead of manually reverse-engineering the file URL every time.
+Run the helper script instead of manually reverse-engineering the file URL every time. If the helper script does not work, try the workflow with Firecrawl.
 
 ```bash
 python3 /Users/tnpbot/.openclaw/workspace/skills/xjqq-bnl-website-download/scripts/download_content.py \
