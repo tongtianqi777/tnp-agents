@@ -1,31 +1,64 @@
 ---
 name: seth-volunteering-hours-logging
-description: Log the volunteering hours for Seth school. Use this skill when the user wants to log the volunteering hours at Seth.
+description: Log volunteer hours to the Seth school Google Form. Trigger when the user says "log volunteer hours", "record volunteering", "submit hours for Seth", or describes school volunteering activities with a duration.
 ---
 
 # Seth Volunteering Hours Logging
 
-Log the volunteering hours for Seth school. Use this skill when the user wants to log the volunteering hours at Seth.
+Submit volunteer hours to the Seth school Google Form on behalf of the Tong family.
 
-## Workflow
+## Step 1 — Extract Required Information
 
-- Extract from the user input about
-  - what volunteer activities the user did, and for each activity:
-    - how many hours it took
-    - on which day of the week it happened (if the user did not mention the day, assume it is today).
+Parse the user's message for:
 
-- Use the Chrome profile "Zoey Bot" to open this Google Form: https://docs.google.com/forms/d/e/1FAIpQLSfLkd4OZIHvHpQdLgxxSNzo9_TX6oHQbPtzRbw96oKy9E2bAw/viewform
+| Field | Rule |
+|---|---|
+| Activities | What was done (one or more) |
+| Hours per activity | Must be a number; ask if missing |
+| Day of each activity | Day of week or date; **default to today if not mentioned** |
 
-- Check the checkbox "Record tianqi.tong@svca.cc as the email to be included with my response"
+If hours are missing and cannot be inferred, ask before proceeding.
 
-- For Family dropdown list: select "Tong (Samuel)"
+## Step 2 — Compute Derived Values
 
-- For "Week of (Starting Sunday)": put down the Sunday of the week the volunteering happened in the format of MM/DD/YYYY. This may needs to be inferred from the volunteering days of the week.
+**Sunday of the week** (needed for the form):
+- From the activity date(s), find the most recent Sunday on or before that date.
+- If activities span multiple weeks, submit one form per week.
+- Format: `MM/DD/YYYY`
 
-- For "Total Volunteer Hours": sum up all the hours of all the volunteering activities.
+**Total hours**: sum all activity hours for the week.
 
-- For "Volunteer Category": check "On-site" if the volunteering acitivities include something that takes place on the school campus (e.g. onsite helper, lunchtime helper, etc). check "Off-site" if the volunteering activities include something that takes place outside of school campus (e.g. Yearbook planner, Field Trip planner, Website management, etc).
+**Volunteer Category** (select one or both):
+- Check **On-site** if any activity takes place on school campus — e.g., onsite helper, lunchtime helper, classroom helper, library helper.
+- Check **Off-site** if any activity takes place outside school campus — e.g., Yearbook planner, Field Trip planner, Website management, newsletter editing.
+- Both boxes may be checked if activities span both categories.
 
-- For "Description of Work": put down the volunteering activities that happened (refer to the "Reference" for some examples)
+**Description of Work**: a short comma-separated list of the activities, matching the style in the Reference section below.
 
-- Submit the form.
+## Step 3 — Fill the Google Form
+
+Use the Chrome profile **"Zoey Bot"** to open:
+`https://docs.google.com/forms/d/e/1FAIpQLSfLkd4OZIHvHpQdLgxxSNzo9_TX6oHQbPtzRbw96oKy9E2bAw/viewform`
+
+Fill each field in order:
+
+1. **Email checkbox** — select "Record tianqi.tong@svca.cc as the email to be included with my response"
+2. **Family** — select `Tong (Samuel)` from the dropdown
+3. **Week of (Starting Sunday)** — enter the Sunday date computed in Step 2
+4. **Total Volunteer Hours** — enter the total hours computed in Step 2
+5. **Volunteer Category** — check the appropriate box(es) per the logic in Step 2
+6. **Description of Work** — enter the activity description from Step 2
+
+Submit the form and confirm success to the user.
+
+## Reference — Example Activity Descriptions
+
+| Activity | Category | Example description |
+|---|---|---|
+| Help at lunch | On-site | Lunchtime helper |
+| Classroom aide | On-site | Classroom helper |
+| Help set up/clean event on campus | On-site | Onsite event helper |
+| Yearbook layout/design | Off-site | Yearbook planner |
+| Plan a field trip | Off-site | Field Trip planner |
+| School website updates | Off-site | Website management |
+| Write/edit school newsletter | Off-site | Newsletter editing |
