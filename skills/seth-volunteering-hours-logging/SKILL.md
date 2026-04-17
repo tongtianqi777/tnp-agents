@@ -35,21 +35,9 @@ If hours are missing and cannot be inferred, ask the user before proceeding.
 
 **Description of Work**: short comma-separated list of activities (see Reference for style).
 
-## Step 3 — Fill the Google Form via Firecrawl
+## Step 3 — Show Summary and Confirm
 
-Open the form using the Chrome profile **"Zoey"**:
-`https://docs.google.com/forms/d/e/1FAIpQLSfLkd4OZIHvHpQdLgxxSNzo9_TX6oHQbPtzRbw96oKy9E2bAw/viewform`
-
-Use Firecrawl interact prompts to fill the form in order:
-
-1. Click the checkbox labeled **"Record tianqi.tong@svca.cc as the email to be included with my response"** to select it.
-2. Click the **Family** dropdown and select **"Tong (Samuel)"**.
-3. Click the **"Week of (Starting Sunday)"** field and type the Sunday date (MM/DD/YYYY).
-4. Click the **"Total Volunteer Hours"** field and type the total hours.
-5. Click the **"On-site"** checkbox if applicable; click the **"Off-site"** checkbox if applicable.
-6. Click the **"Description of Work"** text area and type the activity description.
-
-Before clicking Submit, **pause and show the user a summary** of what will be submitted:
+Before doing anything, show the user a summary and ask for confirmation:
 
 > Ready to submit:
 > - Week of: `<sunday date>`
@@ -59,20 +47,96 @@ Before clicking Submit, **pause and show the user a summary** of what will be su
 >
 > Confirm to submit?
 
-Only proceed to click **Submit** after the user confirms. After submitting, confirm success to the user.
+Only proceed after the user confirms.
+
+## Step 4 — Fill the Google Form via Local Playwright Script
+
+### One-time setup (skip if already done)
+
+Check if Python playwright is installed:
+```bash
+python3 -c "import playwright" 2>/dev/null || pip3 install playwright && python3 -m playwright install chromium
+```
+
+### Write and run the script
+
+Write the following script to `/tmp/seth_volunteer.py`, substituting the actual values for `SUNDAY_DATE`, `TOTAL_HOURS`, `ONSITE`, `OFFSITE`, and `DESCRIPTION`:
+
+```python
+import sys
+from playwright.sync_api import sync_playwright
+
+FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfLkd4OZIHvHpQdLgxxSNzo9_TX6oHQbPtzRbw96oKy9E2bAw/viewform"
+CHROME_USER_DATA = "/Users/tnpbot/Library/Application Support/Google/Chrome"
+CHROME_PROFILE = "Profile 3"  # Zoey — already signed into Google
+
+SUNDAY_DATE = "<MM/DD/YYYY>"
+TOTAL_HOURS = "<number>"
+ONSITE = <True or False>
+OFFSITE = <True or False>
+DESCRIPTION = "<description text>"
+
+with sync_playwright() as p:
+    ctx = p.chromium.launch_persistent_context(
+        CHROME_USER_DATA,
+        channel="chrome",
+        args=[f"--profile-directory={CHROME_PROFILE}"],
+        headless=False,
+    )
+    page = ctx.new_page()
+    page.goto(FORM_URL, wait_until="networkidle")
+
+    # Email checkbox
+    email_cb = page.get_by_text("Record tianqi.tong@svca.cc").locator("xpath=ancestor::*[contains(@class,'freebirdFormviewerViewItemsCheckboxChoice')]//div[@role='checkbox']")
+    if email_cb.get_attribute("aria-checked") != "true":
+        email_cb.click()
+
+    # Family dropdown
+    page.get_by_role("listbox").first.click()
+    page.get_by_role("option", name="Tong (Samuel)").click()
+
+    # Week of (Starting Sunday)
+    page.get_by_label("Week of (Starting Sunday)").fill(SUNDAY_DATE)
+
+    # Total Volunteer Hours
+    page.get_by_label("Total Volunteer Hours").fill(str(TOTAL_HOURS))
+
+    # Checkboxes
+    if ONSITE:
+        onsite = page.get_by_text("On-site").locator("xpath=ancestor::*[contains(@class,'freebirdFormviewerViewItemsCheckboxChoice')]//div[@role='checkbox']")
+        if onsite.get_attribute("aria-checked") != "true":
+            onsite.click()
+    if OFFSITE:
+        offsite = page.get_by_text("Off-site").locator("xpath=ancestor::*[contains(@class,'freebirdFormviewerViewItemsCheckboxChoice')]//div[@role='checkbox']")
+        if offsite.get_attribute("aria-checked") != "true":
+            offsite.click()
+
+    # Description
+    page.get_by_label("Description of Work").fill(DESCRIPTION)
+
+    # Submit
+    page.get_by_role("button", name="Submit").click()
+    page.wait_for_url("**/formResponse*", timeout=10000)
+    print("Submitted successfully.")
+    ctx.close()
+```
+
+Run it:
+```bash
+python3 /tmp/seth_volunteer.py
+```
+
+### Troubleshooting
+
+- **Chrome is already open with Profile 3**: close all Chrome windows, then retry.
+- **`aria-checked` selector doesn't match**: use `page.screenshot(path="/tmp/form.png")` before the failing line to inspect the page visually.
+- **Date field rejects input**: try `page.get_by_label("Week of (Starting Sunday)").click()` then `.fill()`.
+- **Dropdown won't open**: scroll it into view with `.scroll_into_view_if_needed()` then `.click()`.
 
 ## Operating Rules
 
-- If the form page does not load with Zoey Bot profile, retry once before reporting failure.
-- If a dropdown or checkbox is not clickable (obscured or overlapped), scroll it into view first.
-- If the week's activities span two calendar weeks, submit two separate forms — one per week.
+- If activities span two calendar weeks, run the script twice — once per week with adjusted dates and hours.
 - Do not guess ambiguous activity categories; default to On-site if the activity location is unclear and note the assumption to the user.
-
-## Troubleshooting
-
-- **Dropdown won't open**: use Firecrawl interact to scroll the element into view, then click.
-- **Date field rejects input**: try clicking to focus first, then clear existing content, then type.
-- **Form submission fails**: check that all required fields are filled; Google Forms marks required fields with a red asterisk on error.
 
 ## Reference — Example Activity Descriptions
 
