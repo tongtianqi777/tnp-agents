@@ -13,76 +13,93 @@ Read the user's message carefully. The life moment description may be in English
 
 Preserve the meaning and wording as closely as possible. Do not paraphrase, summarize, or alter the content. Add line breaks only where they improve readability (e.g., between distinct sentences or clauses).
 
+**Date:** If the user explicitly states a date (e.g., "yesterday", "last Saturday", "April 20", "2026-04-20"), use that date. Otherwise default to today's date. Always convert to `MM/DD/YYYY` format.
+
+**Sender:** Identify who sent the message. Jake is the primary user. If the message came from Telegram account `@zoeyhu`, the sender is Zoey. Use the first name only.
+
 ## Step 2 — Format the Entry
 
-Format the entry as:
+The date line must be **bold**. The sender's name goes on the next line in *italics*. Then a blank line, then the life moment description.
 
+Example (rendered):
+
+> **04/27/2026**
+> *Jake*
+>
+> Today Seth scored his first goal in the soccer game. The whole family was there cheering for him. 太棒了！
+
+In HTML (used when writing to Apple Notes):
+
+```html
+<div><b>MM/DD/YYYY</b></div><div><i>Sender Name</i></div><div><br></div><div>Life moment description</div><div><br></div>
 ```
-<MM/DD/YYYY>
-<Life moment description>
-```
 
-Use today's date for the date line.
+Use the date and sender from Step 1.
 
-Example:
+## Step 3 — Insert into the Note via Python + AppleScript
 
-```
-04/27/2026
-Today Seth scored his first goal in the soccer game. The whole family was there cheering for him. 太棒了！
-```
+Write the following script to `/tmp/record_moment.py`, substituting the actual `DATE_LINE`, `SENDER_NAME`, and `MOMENT_TEXT` values:
 
-## Step 3 — Prepend to the Note via AppleScript
+```python
+import subprocess, html, os
 
-Run the following AppleScript via `osascript` to prepend the new entry at the top of the note. Replace `DATE_LINE` and `MOMENT_TEXT` with the actual formatted values.
+DATE_LINE = "MM/DD/YYYY"
+SENDER_NAME = "Sender Name"
+MOMENT_TEXT = "MOMENT_TEXT_HERE"
 
-```bash
-osascript <<'APPLESCRIPT'
+# Read the current note body as HTML
+get_script = """
 tell application "Notes"
-    set targetFolder to folder "Notes"
-    set targetNote to note "TNP Life Moments" of targetFolder
-
-    set newEntry to "DATE_LINE" & linefeed & "MOMENT_TEXT"
-    set existingBody to plaintext of targetNote
-
-    set updatedBody to newEntry & linefeed & linefeed & existingBody
-    set body of targetNote to updatedBody
+    set targetNote to note "TNP Life Moments" of folder "Notes"
+    return body of targetNote
 end tell
-APPLESCRIPT
+"""
+result = subprocess.run(["osascript", "-e", get_script], capture_output=True, text=True, check=True)
+current_html = result.stdout.strip()
+
+# Build the new entry HTML (bold date, italic sender, blank line, description, trailing blank line)
+new_entry = (
+    f"<div><b>{html.escape(DATE_LINE)}</b></div>"
+    f"<div><i>{html.escape(SENDER_NAME)}</i></div>"
+    f"<div><br></div>"
+    f"<div>{html.escape(MOMENT_TEXT)}</div>"
+    f"<div><br></div>"
+)
+
+# Insert after the first </div> (which closes the note title line "TNP Life Moments")
+insert_pos = current_html.find("</div>") + len("</div>")
+updated_html = current_html[:insert_pos] + new_entry + current_html[insert_pos:]
+
+# Write the updated HTML to a temp file so AppleScript can read it safely
+# (avoids embedding HTML directly in AppleScript strings, which breaks on quotes/special chars)
+import os
+html_tmp = "/tmp/note_content.html"
+with open(html_tmp, "w", encoding="utf-8") as f:
+    f.write(updated_html)
+
+set_script = f"""
+tell application "Notes"
+    set targetNote to note "TNP Life Moments" of folder "Notes"
+    set htmlContent to read POSIX file "{html_tmp}" as «class utf8»
+    set body of targetNote to htmlContent
+end tell
+"""
+subprocess.run(["osascript", "-e", set_script], check=True)
+os.remove(html_tmp)
+print("Life moment recorded.")
 ```
 
-### Important notes on the AppleScript
-
-- The note name is **"TNP Life Moments"** and the folder name is **"Notes"**.
-- `plaintext` reads the current note body as plain text; `body` sets it.
-- Prepend `newEntry` followed by two line feeds before the existing body so entries are separated by a blank line.
-
-### Handling quotes in the text
-
-If the life moment description contains single or double quotes, use a Python helper to invoke the AppleScript to avoid shell escaping issues:
+Run it:
 
 ```bash
-python3 -c "
-import subprocess
-
-date_line = 'MM/DD/YYYY'
-moment_text = '''MOMENT_TEXT_HERE'''
-
-script = f'''
-tell application \"Notes\"
-    set targetFolder to folder \"Notes\"
-    set targetNote to note \"TNP Life Moments\" of targetFolder
-    set newEntry to \"{date_line}\" & linefeed & \"{moment_text}\"
-    set existingBody to plaintext of targetNote
-    set updatedBody to newEntry & linefeed & linefeed & existingBody
-    set body of targetNote to updatedBody
-end tell
-'''
-subprocess.run(['osascript', '-e', script], check=True)
-print('Life moment recorded.')
-"
+python3 /tmp/record_moment.py
 ```
 
-Use the Python approach whenever the text contains quotes or special characters.
+### Important notes
+
+- The note title "TNP Life Moments" lives in the first `<div>` of the body HTML. Inserting after the first `</div>` places the new entry directly below the title.
+- `html.escape()` safely handles quotes and special characters in the date and text.
+- `repr()` in Python produces a properly quoted AppleScript string literal for the HTML payload.
 
 ## Step 4 — Confirm to the User
 
